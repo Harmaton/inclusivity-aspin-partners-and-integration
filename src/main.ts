@@ -18,7 +18,7 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory, {
     jsonDocumentUrl: 'json',
-    useGlobalPrefix: true
+    useGlobalPrefix: true,
   });
   await app.listen(process.env.PORT ?? 3000);
 }

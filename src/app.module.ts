@@ -1,10 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { CustomerManagementModule } from './customer-management/customer-management.module';
+import { ConfigModule } from '@nestjs/config';
+import aspinConfig from './config/aspin.config';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    CustomerManagementModule,
+    ConfigModule.forRoot({
+      envFilePath: '.env.example',
+      isGlobal: true,
+      load: [aspinConfig],
+    }),
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

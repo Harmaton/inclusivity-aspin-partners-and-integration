@@ -8,8 +8,11 @@ describe('CustomerManagementService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [CustomerManagementService],
     }).compile();
-
     service = module.get<CustomerManagementService>(CustomerManagementService);
+  });
+
+  it('should ', () => {
+    expect(service).toBeDefined();
   });
 
   it('should be defined', () => {
