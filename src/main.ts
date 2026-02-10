@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,11 +16,21 @@ async function bootstrap() {
     .addTag('swagger', 'Swagger Documentation')
     .build();
 
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, documentFactory, {
+  // ✅ Create the document FIRST
+  const document = SwaggerModule.createDocument(app, config);
+
+  // ✅ Set up Swagger UI
+  SwaggerModule.setup('docs', app, document, {
     jsonDocumentUrl: 'json',
     useGlobalPrefix: true,
   });
+
+  // ✅ Write the ACTUAL document (not the function)
+  fs.writeFileSync('./openapi-spec.json', JSON.stringify(document, null, 2));
+
+  console.log('✅ OpenAPI spec exported to ./openapi-spec.json');
+
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`🚀 Server running on port ${process.env.PORT ?? 3000}`);
 }
 bootstrap();

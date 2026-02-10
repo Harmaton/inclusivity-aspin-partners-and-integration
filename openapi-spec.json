@@ -1,0 +1,339 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/customers/register": {
+      "post": {
+        "description": "Register a new customer and initiate KYC verification with PartnerCRM. \n    This endpoint works asynchronously - it submits a registration request and returns an acknowledgement \n    with a unique customer GUID. Use the GUID to check registration status using the GET /customers/:guid endpoint.",
+        "operationId": "CustomerManagementController_create",
+        "parameters": [
+          {
+            "name": "partner_guid",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bearer_token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partner",
+            "required": true,
+            "in": "query",
+            "description": "Partner GUID (e.g., \"demo\")",
+            "schema": {
+              "example": "demo"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerManagementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer registration request submitted successfully"
+          },
+          "400": {
+            "description": "Invalid request payload - validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "ValidationError",
+                    "message": "Invalid request data",
+                    "details": [
+                      {
+                        "field": "msisdn",
+                        "message": "Phone number must be in international format"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing OAuth token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "Unauthorized",
+                    "message": "Invalid access token"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Customer already exists with this MSISDN or external_identifier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "ConflictError",
+                    "message": "Customer with this MSISDN already exists",
+                    "details": {
+                      "customer_guid": "cust_1707564600_abc123"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register a new customer",
+        "tags": [
+          "Customer Management"
+        ]
+      }
+    },
+    "/api/customers/webhooks/kyc-status": {
+      "post": {
+        "description": "PartnerCRM sends status updates to this endpoint when customer verification status changes.\n    This endpoint should be configured in PartnerCRM's webhook settings.\n    \n    SECURITY: Validate X-Webhook-Signature header to ensure webhook is from PartnerCRM.",
+        "operationId": "CustomerManagementController_receiveKycWebhook",
+        "parameters": [
+          {
+            "name": "x-webhook-signature",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KycWebhookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "received": true,
+                    "message": "Webhook processed successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid webhook payload"
+          },
+          "401": {
+            "description": "Invalid webhook signature"
+          },
+          "404": {
+            "description": "Customer not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Webhook callback for KYC status updates",
+        "tags": [
+          "Customer Management"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Aspin Partners and Integrations API Documentation",
+    "description": "The Aspin Partners and Integrations API description",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "swagger",
+      "description": "Swagger Documentation"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "CreateCustomerManagementDto": {
+        "type": "object",
+        "properties": {
+          "msisdn": {
+            "type": "string",
+            "example": "00254712345678",
+            "description": "Customer phone number in international format (MSISDN)"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "John",
+            "description": "Customer first name"
+          },
+          "surname": {
+            "type": "string",
+            "example": "Doe",
+            "description": "Customer surname/last name"
+          },
+          "partner_guid": {
+            "type": "string",
+            "example": "demo",
+            "description": "Partner GUID identifying your organization"
+          },
+          "display_language": {
+            "type": "string",
+            "example": "en",
+            "description": "Display language code (en, fr, sw, rw, etc.)"
+          },
+          "national_id": {
+            "type": "string",
+            "example": "12345678",
+            "description": "National ID or passport number"
+          },
+          "beneficiary_msisdn": {
+            "type": "string",
+            "example": "00254700000000",
+            "description": "Beneficiary phone number in international format"
+          },
+          "beneficiary_name": {
+            "type": "string",
+            "example": "Jane Doe",
+            "description": "Beneficiary full name"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "example": "1990-05-15",
+            "description": "Date of birth in YYYY-MM-DD format"
+          },
+          "external_identifier": {
+            "type": "string",
+            "example": "ext_cust_12345",
+            "description": "External identifier for customer in your system"
+          },
+          "registration_channel": {
+            "type": "string",
+            "example": "ApiClient",
+            "description": "Registration channel"
+          },
+          "account_number": {
+            "type": "string",
+            "example": "1234567890",
+            "description": "Bank account number"
+          },
+          "account_type": {
+            "type": "string",
+            "example": "Savings",
+            "description": "Account type (Savings, Current, etc.)"
+          },
+          "branch_code": {
+            "type": "string",
+            "example": "12345",
+            "description": "Bank branch code"
+          }
+        },
+        "required": [
+          "msisdn",
+          "first_name",
+          "surname",
+          "partner_guid",
+          "display_language",
+          "national_id",
+          "date_of_birth",
+          "registration_channel"
+        ]
+      },
+      "VerificationDetailsDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "example": "PartnerCRM"
+          },
+          "verificationId": {
+            "type": "string",
+            "example": "kyc_abc123"
+          },
+          "documentVerified": {
+            "type": "boolean",
+            "example": true
+          },
+          "biometricVerified": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "provider",
+          "verificationId"
+        ]
+      },
+      "KycWebhookDto": {
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "kyc.status.changed"
+            ],
+            "example": "kyc.status.changed"
+          },
+          "customer_guid": {
+            "type": "string",
+            "example": "cust_1234567890_abc",
+            "description": "Customer GUID from ASPIN"
+          },
+          "verificationStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "example": "approved"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2024-02-10T11:00:00Z"
+          },
+          "verificationDetails": {
+            "$ref": "#/components/schemas/VerificationDetailsDto"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "example": "Document quality insufficient"
+          }
+        },
+        "required": [
+          "eventType",
+          "customer_guid",
+          "verificationStatus",
+          "timestamp"
+        ]
+      }
+    }
+  }
+}
