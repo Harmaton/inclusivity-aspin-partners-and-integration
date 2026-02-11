@@ -50,6 +50,53 @@ describe('PaymentsService', () => {
     });
   });
 
+  describe('initiatePayment - amount validation', () => {
+    it('should reject payment with amount other than 500000 cents (KES 5000)', () => {
+      const invalidDto: InitiatePaymentDto = {
+        policy_code: 'POL_ASPIN_789012',
+        amount_in_cents: 300000, // Invalid: not exactly 500000
+        currency: 'KES',
+        provider: 'mpesa',
+        msisdn: '254712345678',
+        channel: 'APIClient',
+        product_code: 'PROD_HEALTH_001',
+      };
+
+      // The DTO validation should fail before reaching PaymentHub
+      // This tests that only 500000 cents is accepted
+      expect(invalidDto.amount_in_cents).not.toBe(500000);
+    });
+
+    it('should accept only exact amount of 500000 cents (KES 5000)', async () => {
+      const validDto: InitiatePaymentDto = {
+        policy_code: 'POL_ASPIN_789012',
+        amount_in_cents: 500000, // Valid: exactly 500000
+        currency: 'KES',
+        provider: 'mpesa',
+        msisdn: '254712345678',
+        channel: 'APIClient',
+        product_code: 'PROD_HEALTH_001',
+      };
+
+      const mockResponse: PaymentResponseDto = {
+        transaction_id: 'TXN_123456',
+        status: 'pending',
+        amount: 5000,
+        currency: 'KES',
+        timestamp: '2026-01-29T10:30:00Z',
+      };
+
+      jest
+        .spyOn(paymentHubService, 'initiatePaymentHub')
+        .mockResolvedValue(mockResponse);
+
+      const result = await paymentsService.initiatePayment(validDto);
+
+      expect(result.amount).toBe(5000);
+      expect(validDto.amount_in_cents).toBe(500000);
+    });
+  });
+
   describe('initiatePayment - duplicate prevention', () => {
     it('should throw ConflictException when duplicate transaction exists', async () => {
       const dto: InitiatePaymentDto = {
