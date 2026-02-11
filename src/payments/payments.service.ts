@@ -26,7 +26,7 @@ interface PaymentTransaction {
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
-  // In-memory store for assignment (simple Map)
+  // In-memory store (simple Map)
   private transactions = new Map<string, PaymentTransaction>();
 
   constructor(private readonly paymentHubService: PaymentHubService) {}
@@ -37,6 +37,7 @@ export class PaymentsService {
    * 2. Check duplicate transaction (by policy_code)
    * 3. Forward to PaymentHub API
    * 4. Store transaction
+   * 4.1 send transaction reference to ASPin
    * 5. Return PaymentHub response
    */
   async initiatePayment(dto: InitiatePaymentDto): Promise<PaymentResponseDto> {
@@ -63,9 +64,9 @@ export class PaymentsService {
       `INITIATING PAYMENT: policy=${dto.policy_code}, provider=${dto.provider}`,
     );
 
-    // FORWARD TO PAYMENTHUB API
+    // FORWARD TO PAYMENT-HUB API
     const paymentHubResponse =
-      await this.paymentHubService.initiatePayment(dto);
+      await this.paymentHubService.initiatePaymentHub(dto);
 
     // STORE TRANSACTION (in-memory for assignment)
     const transaction: PaymentTransaction = {
@@ -87,7 +88,6 @@ export class PaymentsService {
       `PAYMENT INITIATED: aspin_tx=${transaction.aspin_transaction_id}, hub_tx=${paymentHubResponse.transaction_id}`,
     );
 
-    // RETURN PAYMENTHUB RESPONSE (exactly as specified in assignment)
     return paymentHubResponse;
   }
 }

@@ -13,11 +13,8 @@ export class PaymentHubService {
     process.env.SIMULATE_FAILURE_RATE || '0.1',
   ); // 10% failure rate
 
-  /**
-   * Simulates calling PaymentHub API (replaces Mpesa/Airtel gateways)
-   * Returns mock response exactly as specified in assignment
-   */
-  async initiatePayment(dto: InitiatePaymentDto): Promise<PaymentResponseDto> {
+
+  async initiatePaymentHub(dto: InitiatePaymentDto): Promise<PaymentResponseDto> {
     this.logger.log(
       `Calling PaymentHub API: provider=${dto.provider}, amount=${dto.amount_in_cents}`,
     );
@@ -37,14 +34,10 @@ export class PaymentHubService {
       setTimeout(resolve, 300 + Math.random() * 700),
     );
 
-    // Generate mock PaymentHub transaction ID
-    const transactionId = `TXN_${Date.now()}_${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    // Generate mock PaymentHub transaction ID (format: TXN_123456)
+    const transactionId = `TXN_${Date.now().toString().slice(-6)}${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
 
-    // Return EXACT mock response format from assignment
     const response: PaymentResponseDto = {
-      message: '',
-      policy_id: '',
-      provider: '',
       transaction_id: transactionId,
       status: 'pending',
       amount: dto.amount_in_cents,

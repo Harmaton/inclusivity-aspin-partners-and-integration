@@ -1,10 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * EXACT response format from assignment specification:
+ * {
+ *   "transaction_id": "TXN_123456",
+ *   "status": "pending",
+ *   "amount": 5000,
+ *   "currency": "KES",
+ *   "timestamp": "2026-01-29T10:30:00Z"
+ * }
+ */
 export class PaymentResponseDto {
   @ApiProperty({
-    example: 'TXN_ASPIN_20260211_7890',
-    description:
-      'ASPIN-generated transaction reference (use for status checks)',
+    example: 'TXN_123456',
+    description: 'PaymentHub transaction identifier',
   })
   transaction_id: string;
 
@@ -23,39 +32,13 @@ export class PaymentResponseDto {
 
   @ApiProperty({
     example: 'KES',
-    description: 'Currency code',
+    description: 'Currency code (ISO 4217)',
   })
   currency: string;
 
   @ApiProperty({
-    example: 'mpesa',
-    description: 'Payment gateway used',
-    enum: ['mpesa', 'airtel'],
-  })
-  provider: string;
-
-  @ApiProperty({
-    example: '2026-02-11T14:30:00Z',
-    description: 'Transaction initiation timestamp (ISO 8601)',
+    example: '2026-01-29T10:30:00Z',
+    description: 'Transaction timestamp (ISO 8601)',
   })
   timestamp: string;
-
-  @ApiProperty({
-    example: 'POL_ASPIN_789012',
-    description: 'Associated ASPIN policy ID',
-  })
-  policy_id: string;
-
-  @ApiProperty({
-    example: 'ASP_REF_20260211_12345',
-    description: 'ASPIN reference for idempotency',
-    required: false,
-  })
-  aspin_reference?: string;
-
-  @ApiProperty({
-    example: 'Payment initiated successfully. Customer will receive prompt.',
-    description: 'Human-readable status message',
-  })
-  message: string;
 }
