@@ -164,6 +164,116 @@
           "Customer Management"
         ]
       }
+    },
+    "/api/payments/initiate": {
+      "post": {
+        "description": "Initiates payment collection through PaymentHub.\n    Amount must be exactly KES 5,000 for policy premium.",
+        "operationId": "PaymentsController_initiatePayment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiatePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payment initiated successfully",
+            "schema": {
+              "example": {
+                "transaction_id": "TXN_123456",
+                "status": "pending",
+                "amount": 5000,
+                "currency": "KES",
+                "timestamp": "2026-01-29T10:30:00Z"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payment request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "InvalidAmount",
+                    "message": "Payment amount must be exactly KES 5,000 for policy premium",
+                    "details": {
+                      "expected_amount": 5000,
+                      "received_amount": 4000
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "Unauthorized",
+                    "message": "Invalid partner authentication token"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate transaction attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "DuplicateTransaction",
+                    "message": "Payment already initiated for this policy",
+                    "details": {
+                      "existing_transaction_id": "TXN_ASPIN_12345"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Payment gateway unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "GatewayTimeout",
+                    "message": "PaymentHub gateway temporarily unavailable. Please retry.",
+                    "details": {
+                      "provider": "mpesa",
+                      "timeout_ms": 5000
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Initiate payment collection",
+        "tags": [
+          "Payment Integration"
+        ]
+      }
     }
   },
   "info": {
@@ -332,6 +442,155 @@
           "customer_guid",
           "verificationStatus",
           "timestamp"
+        ]
+      },
+      "InitiatePaymentDto": {
+        "type": "object",
+        "properties": {
+          "policy_code": {
+            "type": "string",
+            "example": "POL_ASPIN_789012",
+            "description": "ASPIN policy identifier requiring premium payment"
+          },
+          "amount_in_cents": {
+            "type": "number",
+            "example": 500000,
+            "description": "Payment amount in cents (must be exactly 500,000 cents = KES 5,000 for policy premium)",
+            "minimum": 500000,
+            "maximum": 500000
+          },
+          "currency": {
+            "type": "string",
+            "example": "KES",
+            "description": "Currency code (ISO 4217)",
+            "enum": [
+              "KES"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "example": "mpesa",
+            "description": "Payment gateway provider",
+            "enum": [
+              "mpesa",
+              "airtel"
+            ]
+          },
+          "msisdn": {
+            "type": "string",
+            "example": "254712345678",
+            "description": "Customer MSISDN in E.164 format (without + or 00 prefix)",
+            "pattern": "^254[0-9]{9}$"
+          },
+          "channel": {
+            "type": "string",
+            "example": "APIClient",
+            "description": "Payment channel identifier",
+            "enum": [
+              "APIClient",
+              "WebPortal",
+              "MobileApp",
+              "AgentPortal"
+            ]
+          },
+          "product_code": {
+            "type": "string",
+            "example": "PROD_HEALTH_001",
+            "description": "Product code identifying the insurance product"
+          },
+          "aspin_reference": {
+            "type": "string",
+            "example": "ASP_REF_20260211_12345",
+            "description": "ASPIN-generated reference for idempotency (recommended)"
+          },
+          "description": {
+            "type": "string",
+            "example": "Premium payment for Policy POL_ASPIN_789012",
+            "description": "Payment description shown to customer"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-02-11T14:30:00Z",
+            "description": "Timestamp of payment request (ISO 8601)"
+          }
+        },
+        "required": [
+          "policy_code",
+          "amount_in_cents",
+          "currency",
+          "provider",
+          "msisdn",
+          "channel",
+          "product_code"
+        ]
+      },
+      "PaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "example": "TXN_ASPIN_20260211_7890",
+            "description": "ASPIN-generated transaction reference (use for status checks)"
+          },
+          "status": {
+            "type": "string",
+            "example": "pending",
+            "description": "Current transaction status",
+            "enum": [
+              "pending",
+              "completed",
+              "failed"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "example": 5000,
+            "description": "Payment amount in KES"
+          },
+          "currency": {
+            "type": "string",
+            "example": "KES",
+            "description": "Currency code"
+          },
+          "provider": {
+            "type": "string",
+            "example": "mpesa",
+            "description": "Payment gateway used",
+            "enum": [
+              "mpesa",
+              "airtel"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-02-11T14:30:00Z",
+            "description": "Transaction initiation timestamp (ISO 8601)"
+          },
+          "policy_id": {
+            "type": "string",
+            "example": "POL_ASPIN_789012",
+            "description": "Associated ASPIN policy ID"
+          },
+          "aspin_reference": {
+            "type": "string",
+            "example": "ASP_REF_20260211_12345",
+            "description": "ASPIN reference for idempotency"
+          },
+          "message": {
+            "type": "string",
+            "example": "Payment initiated successfully. Customer will receive prompt.",
+            "description": "Human-readable status message"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "status",
+          "amount",
+          "currency",
+          "provider",
+          "timestamp",
+          "policy_id",
+          "message"
         ]
       }
     }
