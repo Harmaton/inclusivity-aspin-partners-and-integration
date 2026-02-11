@@ -11,10 +11,11 @@ export class PaymentHubService {
   private readonly logger = new Logger(PaymentHubService.name);
   private readonly simulateFailureRate = parseFloat(
     process.env.SIMULATE_FAILURE_RATE || '0.1',
-  ); // 10% failure rate
+  );
 
-
-  async initiatePaymentHub(dto: InitiatePaymentDto): Promise<PaymentResponseDto> {
+  async initiatePaymentHub(
+    dto: InitiatePaymentDto,
+  ): Promise<PaymentResponseDto> {
     this.logger.log(
       `Calling PaymentHub API: provider=${dto.provider}, amount=${dto.amount_in_cents}`,
     );

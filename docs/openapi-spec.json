@@ -470,11 +470,7 @@
           "provider": {
             "type": "string",
             "example": "mpesa",
-            "description": "Payment gateway provider",
-            "enum": [
-              "mpesa",
-              "airtel"
-            ]
+            "description": "Payment gateway provider"
           },
           "msisdn": {
             "type": "string",
@@ -529,8 +525,8 @@
         "properties": {
           "transaction_id": {
             "type": "string",
-            "example": "TXN_ASPIN_20260211_7890",
-            "description": "ASPIN-generated transaction reference (use for status checks)"
+            "example": "TXN_123456",
+            "description": "PaymentHub transaction identifier"
           },
           "status": {
             "type": "string",
@@ -550,36 +546,12 @@
           "currency": {
             "type": "string",
             "example": "KES",
-            "description": "Currency code"
-          },
-          "provider": {
-            "type": "string",
-            "example": "mpesa",
-            "description": "Payment gateway used",
-            "enum": [
-              "mpesa",
-              "airtel"
-            ]
+            "description": "Currency code (ISO 4217)"
           },
           "timestamp": {
             "type": "string",
-            "example": "2026-02-11T14:30:00Z",
-            "description": "Transaction initiation timestamp (ISO 8601)"
-          },
-          "policy_id": {
-            "type": "string",
-            "example": "POL_ASPIN_789012",
-            "description": "Associated ASPIN policy ID"
-          },
-          "aspin_reference": {
-            "type": "string",
-            "example": "ASP_REF_20260211_12345",
-            "description": "ASPIN reference for idempotency"
-          },
-          "message": {
-            "type": "string",
-            "example": "Payment initiated successfully. Customer will receive prompt.",
-            "description": "Human-readable status message"
+            "example": "2026-01-29T10:30:00Z",
+            "description": "Transaction timestamp (ISO 8601)"
           }
         },
         "required": [
@@ -587,10 +559,7 @@
           "status",
           "amount",
           "currency",
-          "provider",
-          "timestamp",
-          "policy_id",
-          "message"
+          "timestamp"
         ]
       }
     }

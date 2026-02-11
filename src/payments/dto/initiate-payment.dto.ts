@@ -54,10 +54,10 @@ export class InitiatePaymentDto {
     example: 'mpesa',
     description: 'Payment gateway provider',
     required: true,
-    enum: PaymentProvider,
+    // enum: PaymentProvider,
   })
-  @IsEnum(PaymentProvider, { message: 'Provider must be mpesa or airtel' })
-  provider: PaymentProvider;
+  // @IsEnum(PaymentProvider, { message: 'Provider must be mpesa or airtel' })
+  provider: string;
 
   @ApiProperty({
     example: '254712345678',
@@ -78,7 +78,7 @@ export class InitiatePaymentDto {
     required: true,
     enum: ['APIClient', 'WebPortal', 'MobileApp', 'AgentPortal'],
   })
-  @IsNotEmpty({ message: 'Channel is required' })
+  @IsOptional()
   @IsString()
   channel: 'APIClient' | 'WebPortal' | 'MobileApp' | 'AgentPortal' =
     'APIClient' as const;
