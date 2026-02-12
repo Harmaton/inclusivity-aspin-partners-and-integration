@@ -1,49 +1,28 @@
+// dto/webhook-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 
 export class WebhookResponseDto {
   @ApiProperty({
     example: true,
-    description: 'Webhook payload received successfully',
+    description: 'Whether webhook was processed successfully',
   })
-  received: boolean;
+  success: boolean;
 
   @ApiProperty({
-    example: true,
-    description: 'Event processed (false = duplicate/idempotency)',
+    example: 'Webhook processed successfully',
+    description: 'Response message',
   })
-  processed: boolean;
+  message: string;
 
   @ApiProperty({
-    example: 'TXN_ASPIN_20260211_7890',
-    description: 'ASPIN transaction ID',
+    example: 'TXN_123456',
+    description: 'Transaction ID that was updated',
   })
   transaction_id: string;
 
   @ApiProperty({
-    example: 'completed',
-    description: 'New payment status after processing',
-    required: false,
-    enum: ['pending', 'completed', 'failed'],
-  })
-  new_status?: string;
-
-  @ApiProperty({
-    example: true,
-    description: 'ASPIN backend successfully notified',
-  })
-  aspin_notified: boolean;
-
-  @ApiProperty({
-    example: 'Status updated to completed. Policy activated.',
-    description: 'Processing details',
-    required: false,
-  })
-  message?: string;
-
-  @ApiProperty({
-    example: '2026-02-11T14:35:00Z',
+    example: '2026-01-29T10:35:00Z',
     description: 'Processing timestamp',
-    required: false,
   })
-  processed_at?: string;
+  processed_at: string;
 }

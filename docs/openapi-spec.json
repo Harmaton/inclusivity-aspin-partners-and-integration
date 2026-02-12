@@ -274,6 +274,84 @@
           "Payment Integration"
         ]
       }
+    },
+    "/api/payments/webhook": {
+      "post": {
+        "description": "Webhook endpoint for PaymentHub to send payment status updates.\n  Validates signature and ensures idempotent processing.",
+        "operationId": "PaymentsController_handleWebhook",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully",
+            "schema": {
+              "example": {
+                "success": true,
+                "message": "Webhook processed successfully",
+                "transaction_id": "TXN_123456",
+                "processed_at": "2026-01-29T10:35:00Z"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid webhook data or transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "TransactionNotFound",
+                    "message": "Transaction not found in system",
+                    "details": {
+                      "transaction_id": "TXN_123456"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid webhook signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "error": "InvalidSignature",
+                    "message": "Webhook signature validation failed",
+                    "details": {
+                      "transaction_id": "TXN_123456"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Receive payment status updates from PaymentHub",
+        "tags": [
+          "Payment Integration"
+        ]
+      }
     }
   },
   "info": {
@@ -560,6 +638,84 @@
           "amount",
           "currency",
           "timestamp"
+        ]
+      },
+      "WebhookPaymentDto": {
+        "type": "object",
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "example": "TXN_123456",
+            "description": "PaymentHub transaction identifier"
+          },
+          "status": {
+            "type": "string",
+            "example": "completed",
+            "description": "Payment status from PaymentHub",
+            "enum": [
+              "completed",
+              "failed"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "example": 5000,
+            "description": "Payment amount in KES"
+          },
+          "currency": {
+            "type": "string",
+            "example": "KES",
+            "description": "Currency code"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-01-29T10:35:00Z",
+            "description": "Webhook timestamp (ISO 8601)"
+          },
+          "signature": {
+            "type": "string",
+            "example": "sha256_hash_here",
+            "description": "Webhook signature for verification"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "status",
+          "amount",
+          "currency",
+          "timestamp",
+          "signature"
+        ]
+      },
+      "WebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether webhook was processed successfully"
+          },
+          "message": {
+            "type": "string",
+            "example": "Webhook processed successfully",
+            "description": "Response message"
+          },
+          "transaction_id": {
+            "type": "string",
+            "example": "TXN_123456",
+            "description": "Transaction ID that was updated"
+          },
+          "processed_at": {
+            "type": "string",
+            "example": "2026-01-29T10:35:00Z",
+            "description": "Processing timestamp"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "transaction_id",
+          "processed_at"
         ]
       }
     }

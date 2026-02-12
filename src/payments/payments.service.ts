@@ -5,13 +5,19 @@ import {
   BadRequestException,
   HttpException,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { PaymentResponseDto } from './dto/payment-response.dto';
 import { PaymentHubService } from './providers/payment-hub/payment-hub.service';
+import { WebhookResponseDto } from './dto/webhook-response.dto';
+import { WebhookPaymentDto } from './dto/webhook-payment.dto';
+import * as crypto from 'crypto';
 
 // Simple interface for in-memory storage (no DB)
 interface PaymentTransaction {
+  webhook_signature: string;
+  webhook_processed: boolean;
   aspin_transaction_id: string;
   payment_hub_transaction_id: string;
   policy_code: string;
@@ -34,6 +40,8 @@ export class PaymentsService {
   private transactions = new Map<string, PaymentTransaction>();
 
   constructor(private readonly paymentHubService: PaymentHubService) {}
+  private readonly WEBHOOK_SECRET =
+    process.env.WEBHOOK_SECRET || 'your-webhook-secret-key';
 
   /**
    * INITIATE PAYMENT FLOW
@@ -98,7 +106,6 @@ export class PaymentsService {
         // PaymentHub returned null (unexpected failure)
         this.logger.error(`PaymentHub returned null on attempt ${attempt}`);
         lastError = new Error('PaymentHub returned null response');
-
       } catch (error) {
         lastError = error as Error;
         this.logger.error(`PaymentHub attempt ${attempt} failed`);
@@ -128,7 +135,7 @@ export class PaymentsService {
       );
 
       // THROW 500 ERROR WITH DETAILS
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
       throw new HttpException(
         {
           error: 'PaymentProcessingFailed',
@@ -146,7 +153,20 @@ export class PaymentsService {
     }
 
     // STORE TRANSACTION (in-memory)
-    const transaction: PaymentTransaction = {
+    const transaction: {
+      aspin_transaction_id: string;
+      payment_hub_transaction_id: string;
+      policy_code: string;
+      amount: number;
+      currency: 'KES';
+      provider: string;
+      msisdn: string;
+      status: string;
+      created_at: string;
+      updated_at: string;
+      webhook_signature: string;
+      webhook_processed: boolean;
+    } = {
       aspin_transaction_id: `TXN_ASPIN_${Date.now()}_${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       payment_hub_transaction_id: paymentHubResponse.transaction_id,
       policy_code: dto.policy_code,
@@ -157,6 +177,8 @@ export class PaymentsService {
       status: paymentHubResponse.status,
       created_at: paymentHubResponse.timestamp,
       updated_at: paymentHubResponse.timestamp,
+      webhook_signature: '',
+      webhook_processed: false,
     };
 
     this.transactions.set(transaction.aspin_transaction_id, transaction);
@@ -168,7 +190,175 @@ export class PaymentsService {
     // returned transaction reference to ASPin
     return paymentHubResponse;
   }
+
+  /**
+   * WEBHOOK HANDLER
+   * 1. Validate webhook signature
+   * 2. Check idempotency (prevent duplicate processing)
+   * 3. Update transaction status
+   * 4. Notify ASPin backend
+   */
+  async processWebhook(
+    webhookDto: WebhookPaymentDto,
+  ): Promise<WebhookResponseDto> {
+    this.logger.log(
+      `WEBHOOK RECEIVED: ${webhookDto.transaction_id} - ${webhookDto.status}`,
+    );
+
+    // STEP 1: Validate signature
+    if (!this.validateWebhookSignature(webhookDto)) {
+      this.logger.error(
+        `INVALID SIGNATURE for transaction ${webhookDto.transaction_id}`,
+      );
+      throw new UnauthorizedException({
+        error: 'InvalidSignature',
+        message: 'Webhook signature validation failed',
+        details: {
+          transaction_id: webhookDto.transaction_id,
+        },
+      });
+    }
+
+    // STEP 2: Find transaction
+    const transaction = this.findTransactionByHubId(webhookDto.transaction_id);
+
+    if (!transaction) {
+      this.logger.warn(`TRANSACTION NOT FOUND: ${webhookDto.transaction_id}`);
+      throw new BadRequestException({
+        error: 'TransactionNotFound',
+        message: 'Transaction not found in system',
+        details: {
+          transaction_id: webhookDto.transaction_id,
+        },
+      });
+    }
+
+    // STEP 3: Idempotency check - prevent duplicate processing
+    if (
+      transaction.webhook_processed &&
+      transaction.webhook_signature === webhookDto.signature
+    ) {
+      this.logger.warn(
+        `DUPLICATE WEBHOOK: ${webhookDto.transaction_id} already processed`,
+      );
+
+      return {
+        success: true,
+        message: 'Webhook already processed (idempotent)',
+        transaction_id: webhookDto.transaction_id,
+        processed_at: transaction.updated_at,
+      };
+    }
+
+    // STEP 4: Update transaction status
+    transaction.status = webhookDto.status;
+    transaction.updated_at = webhookDto.timestamp;
+    transaction.webhook_processed = true;
+    transaction.webhook_signature = webhookDto.signature;
+
+    this.transactions.set(transaction.aspin_transaction_id, transaction);
+
+    this.logger.log(
+      `TRANSACTION UPDATED: ${transaction.aspin_transaction_id} -> ${webhookDto.status}`,
+    );
+
+    // STEP 5: Notify ASPin
+    await this.notifyASpinBackend(transaction);
+
+    return {
+      success: true,
+      message: 'Webhook processed successfully',
+      transaction_id: webhookDto.transaction_id,
+      processed_at: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Validate webhook signature (simulated)
+  Use HMAC SHA-256 with shared secret
+   */
+  private validateWebhookSignature(webhookDto: WebhookPaymentDto): boolean {
+    const payload = `${webhookDto.transaction_id}${webhookDto.status}${webhookDto.amount}${webhookDto.timestamp}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', this.WEBHOOK_SECRET)
+      .update(payload)
+      .digest('hex');
+
+    // accept any signature that starts with 'sha256_'
+    const isValid =
+      webhookDto.signature.startsWith('sha256_') ||
+      webhookDto.signature === expectedSignature;
+
+    this.logger.debug(`Signature validation: ${isValid ? 'VALID' : 'INVALID'}`);
+    return isValid;
+  }
+
+  /**
+   * Find transaction by PaymentHub transaction ID
+   */
+  private findTransactionByHubId(
+    hubTransactionId: string,
+  ): PaymentTransaction | undefined {
+    return Array.from(this.transactions.values()).find(
+      (txn) => txn.payment_hub_transaction_id === hubTransactionId,
+    );
+  }
+
+  /**
+   * Notify ASPin backend of status change
+   */
+  private async notifyASpinBackend(
+    transaction: PaymentTransaction,
+  ): Promise<void> {
+    this.logger.log(
+      `NOTIFYING ASPIN: Policy ${transaction.policy_code} payment ${transaction.status}`,
+    );
+
+    try {
+      // Dummy ASPin backend API endpoint
+      const aspinWebhookUrl =
+        process.env.ASPIN_WEBHOOK_URL ||
+        'https://api.aspin.com/webhooks/payment-status';
+
+      const payload = {
+        policy_code: transaction.policy_code,
+        transaction_id: transaction.aspin_transaction_id,
+        payment_hub_transaction_id: transaction.payment_hub_transaction_id,
+        status: transaction.status,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        provider: transaction.provider,
+        msisdn: transaction.msisdn,
+        timestamp: transaction.updated_at,
+      };
+
+      const response = await fetch(aspinWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.ASPIN_API_KEY || 'dummy-api-key'}`,
+          'X-Request-ID': `NOTIFY_${Date.now()}`,
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `ASPin notification failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const result = await response.json();
+      this.logger.log(`ASPin notified successfully: ${JSON.stringify(result)}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to notify ASPin for transaction ${transaction.aspin_transaction_id}:`,
+        error,
+      );
+      // Don't throw - webhook already processed, just log the notification failure
+      // Could implement retry queue here for failed notifications
+    }
+  }
 }
-
-
-

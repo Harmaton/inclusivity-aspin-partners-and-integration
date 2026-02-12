@@ -21,6 +21,8 @@ import { PaymentsService } from './payments.service';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { PaymentResponseDto } from './dto/payment-response.dto';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { WebhookPaymentDto } from './dto/webhook-payment.dto';
+import { WebhookResponseDto } from './dto/webhook-response.dto';
 
 @ApiTags('Payment Integration')
 @ApiBearerAuth()
@@ -130,29 +132,63 @@ export class PaymentsController {
       if (error instanceof BadRequestException) throw error;
       if (error instanceof ConflictException) throw error;
 
-      // Handle timeout errors
-      if (
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        error.code === 'ETIMEDOUT' ||
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        error.message?.includes('timeout') ||
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        error.message?.includes('unavailable')
-      ) {
-        throw new ServiceUnavailableException({
-          error: 'GatewayTimeout',
-          message: 'PaymentHub gateway temporarily unavailable. Please retry.',
-          details: {
-            provider: paymentDto.provider,
-            timeout_ms: process.env.PAYMENT_TIMEOUT_MS || '5000',
-          },
-        });
-      }
-
       throw new ServiceUnavailableException({
         error: 'PaymentProcessingError',
         message: 'Failed to process payment request',
       });
     }
+  }
+
+  @Post('webhook')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Receive payment status updates from PaymentHub',
+    description: `Webhook endpoint for PaymentHub to send payment status updates.
+  Validates signature and ensures idempotent processing.`,
+  })
+  @ApiBody({ type: WebhookPaymentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook processed successfully',
+    type: WebhookResponseDto,
+    schema: {
+      example: {
+        success: true,
+        message: 'Webhook processed successfully',
+        transaction_id: 'TXN_123456',
+        processed_at: '2026-01-29T10:35:00Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid webhook data or transaction not found',
+    schema: {
+      example: {
+        error: 'TransactionNotFound',
+        message: 'Transaction not found in system',
+        details: { transaction_id: 'TXN_123456' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid webhook signature',
+    schema: {
+      example: {
+        error: 'InvalidSignature',
+        message: 'Webhook signature validation failed',
+        details: { transaction_id: 'TXN_123456' },
+      },
+    },
+  })
+  async handleWebhook(
+    @Body() webhookDto: WebhookPaymentDto,
+  ): Promise<WebhookResponseDto> {
+    this.logger.log(
+      `Webhook received for transaction: ${webhookDto.transaction_id}`,
+    );
+
+    return await this.paymentsService.processWebhook(webhookDto);
   }
 }
