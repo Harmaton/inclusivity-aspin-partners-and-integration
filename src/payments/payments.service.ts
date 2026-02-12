@@ -331,7 +331,7 @@ export class PaymentsService {
         msisdn: transaction.msisdn,
         timestamp: transaction.updated_at,
       };
-
+      // Mock response
       const response = await fetch(aspinWebhookUrl, {
         method: 'POST',
         headers: {
@@ -357,7 +357,6 @@ export class PaymentsService {
         `Failed to notify ASPin for transaction ${transaction.aspin_transaction_id}:`,
         error,
       );
-      // Don't throw - webhook already processed, just log the notification failure
       // Could implement retry queue here for failed notifications
     }
   }

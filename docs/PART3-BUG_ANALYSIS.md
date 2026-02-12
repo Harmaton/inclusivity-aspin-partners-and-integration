@@ -132,7 +132,7 @@ Requests received at: 10:30:15, 10:30:17, 10:30:19
 
 ### Aspin Backend
 
-- Was `/payments/webhook` fully operational during that period?
+- Was `/api/payments/webhook` fully operational during that period?
 - Are webhook receipt and processing logged separately?
 - Any signature validation failures?
 - What status codes are returned?
@@ -144,7 +144,76 @@ Requests received at: 10:30:15, 10:30:17, 10:30:19
 
 ### Application Logs
 
+- Incoming registration requests (timestamps + headers)
+- WebHook Secret Keys
+- HTTP status codes returned
+- Duplicate Webhook Processing being attempted
+
+
+#### Step 1: Identify the 7 missing webhooks
+ - Use the appropriate query language to identify structure of the webhooks.
+
+#### Step 2: Check if webhooks were received but failed
 ```bash
-grep "webhook received" /var/log/aspin.log | wc -l
-grep "webhook processed" /var/log/aspin.log | wc -l
-grep "Invalid.*signature" /var/log/aspin.log
+# Search logs for the 7 transaction IDs
+
+# Outcome:
+# - Found in logs → processing failed
+# - Not found → never delivered
+```
+
+#### Step 3: Test webhook endpoint (5 min)
+```bash
+# Verify endpoint is reachable and responding
+curl -X POST https://webhookurl.com/payments/webhook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transaction_id": "TEST_123",
+    "status": "completed",
+    "amount": 5000,
+    "currency": "KES",
+    "timestamp": "2026-02-12T10:00:00Z",
+    "signature": "sha256_test"
+  }'
+
+# Expected: 200 or 401 (signature validation)
+# Bad: Timeout, connection refused, 5xx
+```
+
+#### Step 4: Check PaymentHub delivery logs (request partner data)
+
+**Step 5: Reproduce the issue (15 min)**
+```bash
+# Send test payment and verify webhook receipt
+# Monitor logs in real-time
+```
+
+---
+
+## 5. Solution & Prevention
+
+### Immediate Fix
+
+#### Solution 1: Webhook Polling Fallback
+Add a cron Job for this
+
+#### Solution 2: Improve Error Handling**
+Improved logging and error handling can assist in tracking error logs much faster.
+
+---
+
+### Short-Term 
+
+#### Solution 3: Add Monitoring Alert
+
+Add alerts for various categories just based off the webhooks received
+
+#### Solution 4: Request PaymentHub Changes
+- Enable exponential backoff retries: 30s, 1min, 5min, 15min, 1hr
+- Retry on 5xx and timeouts
+- Don't retry on 4xx (except 429 rate limit)
+- Provide webhook delivery status API
+
+---
+
+
