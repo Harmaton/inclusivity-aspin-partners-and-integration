@@ -144,7 +144,8 @@ export class CustomerManagementController {
     @Headers('x-webhook-signature') webhookSignature?: string,
   ): { received: boolean; message: string } {
     console.log(webhookSignature);
-    // In production, validate webhook signature here
+
+    //VALIDATE WEBHOOK --- TODO
     // const isValid = await this.webhookService.validateSignature(kycWebhookDto, webhookSignature);
     // if (!isValid) {
     //   throw new UnauthorizedException('Invalid webhook signature');

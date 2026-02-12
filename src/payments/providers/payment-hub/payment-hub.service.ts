@@ -22,7 +22,7 @@ export class PaymentHubService {
 
     // SIMULATE: Random network timeout (10% chance)
     if (Math.random() < this.simulateFailureRate) {
-      this.logger.error('SIMULATED PAYMENTHUB TIMEOUT');
+      this.logger.error('SIMULATED PAYMENT-HUB TIMEOUT');
       throw new ServiceUnavailableException({
         error: 'GatewayTimeout',
         message: 'PaymentHub gateway temporarily unavailable',

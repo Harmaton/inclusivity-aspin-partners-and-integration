@@ -14,7 +14,6 @@ import { WebhookResponseDto } from './dto/webhook-response.dto';
 import { WebhookPaymentDto } from './dto/webhook-payment.dto';
 import * as crypto from 'crypto';
 
-// Simple interface for in-memory storage (no DB)
 interface PaymentTransaction {
   webhook_signature: string;
   webhook_processed: boolean;
@@ -36,7 +35,7 @@ export class PaymentsService {
   // Retry configuration
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY_MS = 1000; // 1 second between retries
-  // In-memory store (simple Map)
+  // In-memory store
   private transactions = new Map<string, PaymentTransaction>();
 
   constructor(private readonly paymentHubService: PaymentHubService) {}
@@ -54,7 +53,7 @@ export class PaymentsService {
    */
   async initiatePayment(dto: InitiatePaymentDto): Promise<PaymentResponseDto> {
     /**
-     * VALIDATION 2: Duplicate check (by policy_code + msisdn pair)
+     * VALIDATION : Duplicate check (by policy_code + msisdn pair)
      * Prevents same customer from initiating duplicate payments for same policy
      * Allows retries for FAILED transactions (customer can retry after failure)
      */
@@ -233,7 +232,7 @@ export class PaymentsService {
       });
     }
 
-    // STEP 3: Idempotency check - prevent duplicate processing
+    // STEP 3: Idempotency check (prevent duplicate processing of the same webhook)
     if (
       transaction.webhook_processed &&
       transaction.webhook_signature === webhookDto.signature
@@ -306,6 +305,7 @@ export class PaymentsService {
 
   /**
    * Notify ASPin backend of status change
+   * The Test for this function is expected to fail because of the dummy API
    */
   private async notifyASpinBackend(
     transaction: PaymentTransaction,

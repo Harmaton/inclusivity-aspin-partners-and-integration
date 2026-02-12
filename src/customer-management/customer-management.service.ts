@@ -20,8 +20,8 @@ import {
 export class CustomerManagementService {
   private readonly logger = new Logger(CustomerManagementService.name);
   private customers: Map<string, Customer> = new Map();
-  private msisdnIndex: Map<string, string> = new Map(); // msisdn -> customer_guid mapping
-  private externalIdIndex: Map<string, string> = new Map(); // external_identifier -> customer_guid
+  private msisdnIndex: Map<string, string> = new Map();
+  private externalIdIndex: Map<string, string> = new Map();
 
   /**
    * Register a new customer and initiate KYC verification with PartnerCRM
@@ -169,7 +169,7 @@ export class CustomerManagementService {
         `Customer KYC rejected: ${webhookDto.customer_guid} - ${webhookDto.rejectionReason}`,
       );
 
-      // Notify customer of rejection
+      // handle rejection
       this.onKycRejected(customer);
     }
 
@@ -182,7 +182,7 @@ export class CustomerManagementService {
   }
 
   /**
-   * Generate a unique customer GUID (ASPIN-style format)
+   * Generate a unique customer GUID (ASPin-style format)
    */
   private generateCustomerGuid(): string {
     const timestamp = Date.now();
@@ -204,7 +204,7 @@ export class CustomerManagementService {
       `[PartnerCRM] KYC verification initiated for customer: ${customer.customer_guid}`,
     );
 
-    // In real implementation:
+    // Simulated (WE NEED TO SEND IDEMPOTENCY HERE AS WELL) TODO
     // const response = await this.httpService.post('https://partnercrm.api/kyc/verify', {
     //   customer_guid: customer.customer_guid,
     //   first_name: customer.first_name,
@@ -226,7 +226,7 @@ export class CustomerManagementService {
       `Processing KYC approval for customer: ${customer.customer_guid}`,
     );
 
-    // In real implementation:
+    // SIMULATED:
     // - Send welcome SMS/email via NotifyService
     // - Activate customer account
     // - Enable policy purchase capabilities
@@ -242,7 +242,7 @@ export class CustomerManagementService {
       `Processing KYC rejection for customer: ${customer.customer_guid}`,
     );
 
-    // In real implementation:
+    // In SIMULATED
     // - Send rejection notification via NotifyService
     // - Provide re-submission instructions
     // - Log for compliance/audit
