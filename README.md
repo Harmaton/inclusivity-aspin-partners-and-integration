@@ -33,9 +33,7 @@ npm install
 
 Create a `.env.example` file in the root directory:
 ```bash
-# .env
-PORT=3000
-NODE_ENV=development
+# .env.example
 
 # Authentication
 JWT_SECRET=your-jwt-secret-key
@@ -45,7 +43,6 @@ WEBHOOK_SECRET=your-webhook-secret-key
 
 # External APIs
 ASPIN_WEBHOOK_URL=https://api.aspin.com/webhooks/payment-status
-ASPIN_API_KEY=dummy-api-key
 
 # Payment Provider URLs (for future implementation)
 MPESA_API_URL=https://sandbox.safaricom.co.ke
