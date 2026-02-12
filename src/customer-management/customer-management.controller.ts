@@ -85,6 +85,10 @@ export class CustomerManagementController {
       },
     },
   })
+  @ApiResponse({
+    status: 500,
+    description: 'Server Error',
+  })
   async create(
     @Body() createCustomerDto: CreateCustomerManagementDto,
     @Query('partner_guid') partnerGuid: string,
@@ -130,6 +134,10 @@ export class CustomerManagementController {
   @ApiResponse({
     status: 404,
     description: 'Customer not found',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Server Error',
   })
   receiveKycWebhook(
     @Body() kycWebhookDto: KycWebhookDto,

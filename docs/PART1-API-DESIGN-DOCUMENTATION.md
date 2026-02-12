@@ -23,6 +23,7 @@ Below is a list of the status codes used and their rationale.
 - `401 Unauthorized`: Missing/invalid authentication token or Invalid webhook signature
 - `404 Not Found`: Customer GUID not found in webhook processing
 - `409 Conflict`: Duplicate customer (MSISDN or external_identifier already exists)
+- `500 Server Error`: Error from my service
 
 ### 3. Authentication Method
 

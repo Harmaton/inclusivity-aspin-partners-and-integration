@@ -93,6 +93,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Server Error"
           }
         },
         "security": [
@@ -152,6 +155,9 @@
           },
           "404": {
             "description": "Customer not found"
+          },
+          "500": {
+            "description": "Server Error"
           }
         },
         "security": [

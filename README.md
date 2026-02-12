@@ -1,6 +1,6 @@
 # Inclusivity Solutions -Support Engineering Assignment
 
-## Overview
+## Project Overview
 
 This is the **Support Engineering Technical Assignment** for **Inclusivity Solutions**. The project implements a payment integration service that bridges Aspin's core insurance platform with third-party payment providers (M-Pesa and Airtel Money).
 
@@ -10,8 +10,8 @@ This is the **Support Engineering Technical Assignment** for **Inclusivity Solut
 
 ## Prerequisites
 
-- **Node.js**: v18+ or v20+ (LTS recommended)
-- **npm**: v9+ or v10+
+- **Node.js**: v24+ (LTS recommended)
+- **npm**: v10+ (LTS recommended)
 - **Git**: For cloning the repository
 
 ---
@@ -20,7 +20,7 @@ This is the **Support Engineering Technical Assignment** for **Inclusivity Solut
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/Harmaton/inclusivity-aspin-partners-and-integration
 cd aspin-partners
 ```
 
@@ -423,6 +423,11 @@ All assignment answers are documented in the `/docs` folder:
 4. **Webhook Secret:** Accepts any signature starting with `sha256_` for testing purposes
 5. **Assignment Focus:** Emphasis on API design, error handling, idempotency, and debugging approach
 
+### Future Improvememnts
+
+1. Add Redis for implementing an idempotency interceptor
+2. Implement external services
+3. Add production DB 
 ---
 
 ## License
