@@ -100,7 +100,7 @@ npm test payments.service.spec.ts
 
 Once the application is running, open your browser and navigate to:
 ```
-http://localhost:3000/api
+http://localhost:3000/api/docs
 ```
 
 This provides an **interactive API documentation** where you can:
@@ -347,19 +347,6 @@ curl -X POST http://localhost:3000/api/payments/webhook \
 
 ---
 
-## Environment Variables Reference
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `PORT` | Server port | No | `3000` |
-| `NODE_ENV` | Environment (development/production) | No | `development` |
-| `JWT_SECRET` | JWT signing secret | Yes | - |
-| `WEBHOOK_SECRET` | Webhook signature validation secret | No | `your-webhook-secret-key` |
-| `ASPIN_WEBHOOK_URL` | Aspin backend webhook endpoint | No | `https://api.aspin.com/webhooks/payment-status` |
-| `ASPIN_API_KEY` | API key for Aspin notifications | No | `dummy-api-key` |
-
----
-
 ## Assignment Deliverables
 
 All assignment answers are documented in the `/docs` folder:
@@ -369,13 +356,6 @@ All assignment answers are documented in the `/docs` folder:
 - OpenAPI/Swagger specification
 - Customer registration flow design
 - Design decisions and rationale
-
-### Part 2: Integration Implementation (40 points)
-📄 **Location:** `/docs/PART2_IMPLEMENTATION.md`
-- Payment initiation endpoint
-- Webhook processing endpoint
-- Error handling implementation
-- Unit tests
 
 ### Part 3: Debugging & Troubleshooting (20 points)
 📄 **Location:** `/docs/PART3_BUG_ANALYSIS.md`
