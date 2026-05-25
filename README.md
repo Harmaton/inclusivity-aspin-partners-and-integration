@@ -1,10 +1,9 @@
-# Inclusivity Solutions -Support Engineering Assignment
+# Inclusivity Solutions -Support Engineering 
 
 ## Project Overview
 
 This is the **Support Engineering Technical Assignment** for **Inclusivity Solutions**. The project implements a payment integration service that bridges Aspin's core insurance platform with third-party payment providers (M-Pesa and Airtel Money).
 
-**Assignment answers are located in the `/docs` folder.**
 
 ---
 
